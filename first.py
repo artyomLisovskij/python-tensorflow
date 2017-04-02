@@ -43,7 +43,7 @@ def preprocess_many(data):
         temp_item.append(item[0])
         temp_item.append(ds.pixel_array)
         temp_item.append(ds2.pixel_array)
-        
+        print(ds.pixel_array)
         data_new.append(temp_item)
     return np.array(data_new, dtype=np.float32)
 
