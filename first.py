@@ -2,10 +2,9 @@ from __future__ import print_function
 
 import numpy as np
 import tflearn
+import dicom
+import os
 
-
-from tflearn.datasets import titanic
-titanic.download_dataset('titanic_dataset.csv')
 
 # Load CSV file, indicate that the first column represents labels
 from tflearn.data_utils import load_csv
@@ -14,26 +13,68 @@ data, labels = load_csv('titanic_dataset.csv', target_column=0,
 
 
 # Preprocessing function
-def preprocess(passengers, columns_to_delete):
-    # Sort by descending id and delete columns
-    for column_to_delete in sorted(columns_to_delete, reverse=True):
-        [passenger.pop(column_to_delete) for passenger in passengers]
-    for i in range(len(passengers)):
-        # Converting 'sex' field to float (id is 1 after removing labels column)
-        passengers[i][1] = 1. if data[i][1] == 'female' else 0.
-    return np.array(passengers, dtype=np.float32)
+def preprocess_many(data):
+    # new array
+    data_new = []
+    # Load dicom's from folder
+    for item in data:
+        temp_item = []
+        
+        # # Get 1st file
+        # RefDs = dicom.read_file(item[1])
+        # # Load dimensions based on the number of rows, columns, and slices (along the Z axis)
+        # ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), len(lstFilesDCM))
+        # # Load spacing values (in mm)
+        # ConstPixelSpacing = (float(RefDs.PixelSpacing[0]), float(RefDs.PixelSpacing[1]), float(RefDs.SliceThickness))
+        # ArrayDicom = numpy.zeros(ConstPixelDims, dtype=RefDs.pixel_array.dtype)
+        # # read the file
+        ds = dicom.read_file(item[1])
 
-# Ignore 'name' and 'ticket' columns (id 1 & 6 of data array)
-to_ignore=[1, 6]
+        # Get 1st file
+        # RefDs = dicom.read_file(item[2])
+        # # Load dimensions based on the number of rows, columns, and slices (along the Z axis)
+        # ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), len(lstFilesDCM))
+        # # Load spacing values (in mm)
+        # ConstPixelSpacing = (float(RefDs.PixelSpacing[0]), float(RefDs.PixelSpacing[1]), float(RefDs.SliceThickness))
+        # ArrayDicom = numpy.zeros(ConstPixelDims, dtype=RefDs.pixel_array.dtype)
+        # # read the file
+        ds2 = dicom.read_file(item[2])
+        
+        temp_item.append(item[0])
+        temp_item.append(ds.pixel_array)
+        temp_item.append(ds2.pixel_array)
+        
+        data_new.append(temp_item)
+    return np.array(data_new, dtype=np.float32)
 
-# Preprocess data
-data = preprocess(data, to_ignore)
+# Preprocessing function
+def preprocess_one(data):
+    # Load dicom's from folder
+    for item in data:
+        print(item)
+    return np.array(data, dtype=np.float32)
+
+
+# TODO: to external csv(?) file this:
+## Preprocess data
+## first parameter is true or false
+## 2nd - profile dicom
+## 3d - front dicom
+data = preprocess_many([
+    [1,'data/N5836DM.di','data/N5836DM-1.di'], 
+    [0,'data/N5806DF.di','data/N5806DF-1.di']
+])
 
 # Build neural network
-net = tflearn.input_data(shape=[None, 6])
+# Here 3 is columns in array
+net = tflearn.input_data(shape=[None, 3])
+# 1st layer init
 net = tflearn.fully_connected(net, 32)
+# 2nd layer init
 net = tflearn.fully_connected(net, 32)
+# 3rd layer init
 net = tflearn.fully_connected(net, 2, activation='softmax')
+# regresion net
 net = tflearn.regression(net)
 
 # Define model
@@ -41,12 +82,7 @@ model = tflearn.DNN(net)
 # Start training (apply gradient descent algorithm)
 model.fit(data, labels, n_epoch=10, batch_size=16, show_metric=True)
 
-# Let's create some data for DiCaprio and Winslet
-dicaprio = [3, 'Jack Dawson', 'male', 19, 0, 0, 'N/A', 5.0000]
-winslet = [1, 'Rose DeWitt Bukater', 'female', 17, 1, 2, 'N/A', 100.0000]
-# Preprocess data
-dicaprio, winslet = preprocess([dicaprio, winslet], to_ignore)
-# Predict surviving chances (class 1 results)
-pred = model.predict([dicaprio, winslet])
-print("DiCaprio Surviving Rate:", pred[0][1])
-print("Winslet Surviving Rate:", pred[1][1])
+
+# data = preprocess_one(['data/filename.dicom','data/filename.dicom'])
+# pred = model.predict(data)
+# print(pred)
