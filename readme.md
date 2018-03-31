@@ -5,10 +5,15 @@ You need python3.4 and pip. Project w/o GPU support(CPU only).
 
 pip3 install todo:
 > sudo pip3 install tflearn
+
 > sudo pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp34-cp34m-linux_x86_64.whl
+
 > sudo pip3 install pydicom
+
 > sudo apt-get clean && sudo apt-get update
+
 > sudo apt-get install libhdf5-serial-dev
+
 > sudo pip3 install h5py
 
 ## About this version
